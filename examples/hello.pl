@@ -10,7 +10,9 @@ use Gst;
 # You can download 'sintel_trailer-480p.webm' from there
 #
 
-my $pipeline = Gst::parse_launch( "playbin uri=file://sintel_trailer-480p.webm" );
+my $URI = shift || die "Need URI to play\n";
+
+my $pipeline = Gst::parse_launch( "playbin uri=$URI" );
 
 Gst::Element::set_state( $pipeline, "playing" );
 
