@@ -1,7 +1,7 @@
 #!perl
-use v5.14;
+use v5.12;
 use warnings;
-use Gst;
+use GStreamer1;
 
 # This is based on the GStreamer Hello, World! tutorial at:
 #
@@ -12,12 +12,13 @@ use Gst;
 
 my $URI = shift || die "Need URI to play\n";
 
-my $pipeline = Gst::parse_launch( "playbin uri=$URI" );
+GStreamer1::init([ $0, @ARGV ]);
+my $pipeline = GStreamer1::parse_launch( "playbin uri=$URI" );
 
-Gst::Element::set_state( $pipeline, "playing" );
+GStreamer1::Element::set_state( $pipeline, "playing" );
 
-my $bus = Gst::Element::get_bus( $pipeline );
-my $msg = $bus->timed_pop_filtered( Gst::CLOCK_TIME_NONE,
+my $bus = GStreamer1::Element::get_bus( $pipeline );
+my $msg = $bus->timed_pop_filtered( GStreamer1::CLOCK_TIME_NONE,
     [ 'error', 'eos' ]);
 
-Gst::Element::set_state( $pipeline, "null" );
+GStreamer1::Element::set_state( $pipeline, "null" );

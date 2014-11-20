@@ -21,7 +21,7 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 # POSSIBILITY OF SUCH DAMAGE.
-package Gst;
+package GStreamer1;
 
 use v5.12;
 use warnings;
@@ -31,36 +31,34 @@ use Glib::Object::Introspection;
 
 BEGIN {
     foreach my $name ('', (
-        'Allocators',
-        'App',
-        'Audio',
+        #'Allocators',
+        #'App',
+        #'Audio',
         'Base',
-        'Check',
+        #'Check',
         'Controller',
-        'Fft',
-        'InsertBin',
-        'Mpegts',
-        'Net',
-        'Pbutils',
-        'Riff',
-        'Rtp',
-        'Rtsp',
-        'Sdp',
-        'Tag',
-        'Video',
+        #'Fft',
+        #'InsertBin',
+        #'Mpegts',
+        #'Net',
+        #'Pbutils',
+        #'Riff',
+        #'Rtp',
+        #'Rtsp',
+        #'Sdp',
+        #'Tag',
+        #'Video',
     )) {
         my $basename = 'Gst' . $name;
         my $pkg      = $name
-            ? 'Gst::' . $name
-            : 'Gst';
+            ? 'GStreamer1::' . $name
+            : 'GStreamer1';
         Glib::Object::Introspection->setup(
             basename => $basename,
             version  => '1.0',
             package  => $pkg,
         );
     }
-
-    Gst::init([ $0, @ARGV ]);
 }
 
 
@@ -72,7 +70,7 @@ __END__
 
 =head1 NAME
 
-  Gst - Bindings for GStreamer 1.0, the open source multimedia framework
+  GStreamer1 - Bindings for GStreamer 1.0, the open source multimedia framework
 
 =head1 SYNOPSIS
 

@@ -23,4 +23,4 @@
 # POSSIBILITY OF SUCH DAMAGE.
 use Test::More tests => 1;
 use v5.12;
-use_ok( 'Gst' );
+use_ok( 'GStreamer1' );
