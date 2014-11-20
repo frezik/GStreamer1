@@ -21,7 +21,32 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 # POSSIBILITY OF SUCH DAMAGE.
-use Test::More tests => 2;
+package GStreamer1::Caps::Simple;
+
 use v5.12;
-use_ok( 'GStreamer1' );
-use_ok( 'GStreamer1::Caps::Simple' );
+use warnings;
+
+
+sub new
+{
+    my ($class, $media_type, @args) = @_;
+    my $self = GStreamer1::Caps->new_empty_simple( $media_type );
+
+    while( scalar(@args) >= 3 ) {
+        my $name  = shift @args;
+        my $type  = shift @args;
+        my $value = shift @args;
+
+        my $glib_type_value = Glib::Object::Introspection::GValueWrapper->new(
+            $type => $value,
+        );
+        $self->set_value( $name => $glib_type_value );
+    }
+
+    return $self;
+}
+
+
+1;
+__END__
+

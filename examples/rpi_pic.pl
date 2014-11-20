@@ -46,9 +46,10 @@ my ($rpi, $h264parse, $capsfilter, $avdec_h264, $jpegenc, $fakesink)
     );
 
 
-my $caps = GStreamer1::Caps->new_empty_simple( 'video/x-h264' );
-$caps->set_value( width  => 800 );
-$caps->set_value( height => 600 );
+my $caps = GStreamer1::Caps::Simple->new( 'video/x-h264',
+    width  => 'Glib::Int' => 800,
+    height => 'Glib::Int' => 600,
+);
 $capsfilter->set( caps => $caps );
 
 $fakesink->set( 'signal-handoffs' => TRUE );

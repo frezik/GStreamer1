@@ -21,7 +21,18 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 # POSSIBILITY OF SUCH DAMAGE.
-use Test::More tests => 2;
-use v5.12;
-use_ok( 'GStreamer1' );
-use_ok( 'GStreamer1::Caps::Simple' );
+use Test::More tests => 3;
+use v5.14;
+use GStreamer1; # This should load GStreamer1::Caps::Simple on its own
+GStreamer1::init([ $0, @ARGV ]);
+
+
+my $caps = GStreamer1::Caps::Simple->new( 'video/x-h264',
+    width  => 'Glib::Int' => 800,
+    height => 'Glib::Int' => 600,
+);
+isa_ok( $caps => 'GStreamer1::Caps' );
+
+my $struct = $caps->get_structure( 0 );
+cmp_ok( $struct->get_value( 'width' ),  '==', 800, "Width set"  );
+cmp_ok( $struct->get_value( 'height' ), '==', 600, "Height set" );
