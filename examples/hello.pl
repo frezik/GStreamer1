@@ -15,10 +15,10 @@ my $URI = shift || die "Need URI to play\n";
 GStreamer1::init([ $0, @ARGV ]);
 my $pipeline = GStreamer1::parse_launch( "playbin uri=$URI" );
 
-GStreamer1::Element::set_state( $pipeline, "playing" );
+$pipeline->set_state( "playing" );
 
-my $bus = GStreamer1::Element::get_bus( $pipeline );
+my $bus = $pipeline->get_bus;
 my $msg = $bus->timed_pop_filtered( GStreamer1::CLOCK_TIME_NONE,
     [ 'error', 'eos' ]);
 
-GStreamer1::Element::set_state( $pipeline, "null" );
+$pipeline->set_state( "null" );
