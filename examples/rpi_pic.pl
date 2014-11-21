@@ -35,16 +35,15 @@ GStreamer1::init([ $0, @ARGV ]);
 my $loop = Glib::MainLoop->new( undef, FALSE );
 my $pipeline = GStreamer1::Pipeline->new( 'pipeline' );
 
-my ($rpi, $h264parse, $capsfilter, $avdec_h264, $jpegenc, $fakesink)
-    = GStreamer1::ElementFactory->make(
-        rpi        => 'and_who',
-        h264parse  => 'are_you',
-        capsfilter => 'the_proud_lord_said',
-        avedc_h264 => 'that_i_should_bow_so_low',
-        jpegenc    => 'only_a_cat',
-        fakesink   => 'of_a_different_coat',
-    );
-
+my $rpi        = GStreamer1::ElementFactory::make( rpicamsrc => 'and_who' );
+my $h264parse  = GStreamer1::ElementFactory::make( h264parse => 'are_you' );
+my $capsfilter = GStreamer1::ElementFactory::make(
+    capsfilter => 'the_proud_lord_said' );
+my $avdec_h264 = GStreamer1::ElementFactory::make(
+    avdec_h264 => 'that_i_should_bow_so_low' );
+my $jpegenc    = GStreamer1::ElementFactory::make( jpegenc => 'only_a_cat' );
+my $fakesink   = GStreamer1::ElementFactory::make(
+    fakesink => 'of_a_different_coat' );
 
 my $caps = GStreamer1::Caps::Simple->new( 'video/x-h264',
     width  => 'Glib::Int' => 800,
@@ -58,14 +57,20 @@ $fakesink->signal_connect(
 );
 
 
-$pipeline->add( $rpi, $h264parse, $capsfilter, $avdec_h264, $jpegenc,
-    $fakesink );
-$rpi->link( $h264parse, $capsfilter, $avdec_h264, $jpegenc, $fakesink );
+my @link = ( $rpi, $h264parse, $capsfilter, $avdec_h264, $jpegenc, $fakesink );
+$pipeline->add( $_ ) for @link;
+foreach my $i (0 .. $#link) {
+    last if ! exists $link[$i+1];
+    my $this = $link[$i];
+    my $next = $link[$i+1];
+    $this->link( $next );
+}
 
 $pipeline->set_state( "playing" );
 
 my $bus = $pipeline->get_bus;
 my $msg = $bus->timed_pop_filtered( GStreamer1::CLOCK_TIME_NONE,
     [ 'error', 'eos' ]);
+#warn "Message: " . $msg->error . "\n";
 
 $pipeline->set_state( "null" );
