@@ -23,8 +23,13 @@ sub get_dump_file_callback
     my ($pipeline) = @_;
     return sub {
         my ($fakesink, $buf, $pad) = @_;
-        say "Got pic";
+        say "Got jpeg, saving . . . ";
 
+        open( my $fh, '>', $OUT_FILE ) or die "Can't open '$OUT_FILE': $!\n";
+        print $fh $buf;
+        close $fh;
+
+        say "Saved jpeg to $OUT_FILE";
         $pipeline->set_state( "null" );
         return 1;
     };
