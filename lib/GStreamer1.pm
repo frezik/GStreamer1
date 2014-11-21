@@ -124,7 +124,7 @@ Example:
 =head2 Adding/linking
 
 The original GStreamer added methods for C<<Pipeline->add()>> and 
-C<<Obj->link()>> that could take lists of objects.  GStreamer1 may add 
+C<<Element->link()>> that could take lists of objects.  GStreamer1 may add 
 similar methods in the future.  For now, the bindings directly follow from the 
 C interface, so they take only one object at a time.
 
