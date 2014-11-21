@@ -75,9 +75,73 @@ __END__
 
 =head1 SYNOPSIS
 
+    use GStreamer1;
+
+    GStreamer1::init([ $0, @ARGV ]);
+    my $pipeline = GStreamer1::parse_launch( "playbin uri=$URI" );
+
+    $pipeline->set_state( "playing" );
+
+    my $bus = $pipeline->get_bus;
+    my $msg = $bus->timed_pop_filtered( GStreamer1::CLOCK_TIME_NONE,
+        [ 'error', 'eos' ]);
+
+    $pipeline->set_state( "null" );
+
 =head1 DESCRIPTION
 
+GStreamer1 implements a framework that allows for processing and encoding of 
+multimedia sources in a manner similar to a shell pipeline.
+
+Because it's introspection-based, most of the classes follow directly from the 
+C API.  Therefore, most of the documentation is by example rather than 
+a full breakdown of the class structure.
+
+=head1 PORTING FROM GStreamer
+
+If you're porting from the original GStreamer module, here are some things 
+to keep in mind.
+
+=head2 ElementFactory
+
+The original GStreamer had a version of C<<ElementFactory->make()>> which 
+could be called with a list of gst plugins and associated names.  GStreamer1 
+may add a similar method in the future.  For now, the bindings directly follow 
+from the C interface, so they take only one at a time.
+
+Example:
+
+    my $rpi        = GStreamer1::ElementFactory::make( rpicamsrc => 'and_who' );
+    my $h264parse  = GStreamer1::ElementFactory::make( h264parse => 'are_you' );
+    my $capsfilter = GStreamer1::ElementFactory::make(
+        capsfilter => 'the_proud_lord_said' );
+    my $avdec_h264 = GStreamer1::ElementFactory::make(
+        avdec_h264 => 'that_i_should_bow_so_low' );
+    my $jpegenc    = GStreamer1::ElementFactory::make( jpegenc => 'only_a_cat' );
+    my $fakesink   = GStreamer1::ElementFactory::make(
+        fakesink => 'of_a_different_coat' );
+
+=head2 Adding/linking
+
+The original GStreamer added methods for C<<Pipeline->add()>> and 
+C<<Obj->link()>> that could take lists of objects.  GStreamer1 may add 
+similar methods in the future.  For now, the bindings directly follow from the 
+C interface, so they take only one object at a time.
+
+Example:
+
+    my @link = ( $rpi, $h264parse, $capsfilter, $avdec_h264, $jpegenc, $fakesink );
+    $pipeline->add( $_ ) for @link;
+    foreach my $i (0 .. $#link) {
+        last if ! exists $link[$i+1];
+        my $this = $link[$i];
+        my $next = $link[$i+1];
+        $this->link( $next );
+    }
+
 =head1 EXAMPLES
+
+See the C<examples/> directory in the distribution.
 
 =head1 SEE ALSO
 
