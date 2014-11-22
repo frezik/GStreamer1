@@ -14,25 +14,25 @@ use Glib qw( TRUE FALSE );
 # gst-launch-1.0 rpicamsrc ! h264parse ! 'video/x-h264,width=800,height=600' \
 #    ! avdec_h264 ! jpegenc quality=50 ! filesink location=output.jpg
 #
+# Except that we use an appsink to get the jpeg and then save it.
+#
 
 my $OUT_FILE = shift || die "Need file to save to\n";
 
 
-sub get_dump_file_callback
+sub dump_to_file
 {
-    my ($pipeline) = @_;
-    return sub {
-        my ($fakesink, $buf, $pad) = @_;
-        say "Got jpeg, saving . . . ";
+    my ($output_file, $jpeg_data) = @_;
+    my @jpeg_bytes = @$jpeg_data;
+    say "Got jpeg, saving " . scalar(@jpeg_bytes) . " bytes . . . ";
 
-        open( my $fh, '>', $OUT_FILE ) or die "Can't open '$OUT_FILE': $!\n";
-        print $fh $buf;
-        close $fh;
+    open( my $fh, '>', $output_file ) or die "Can't open '$output_file': $!\n";
+    binmode $fh;
+    print $fh pack( 'C*', @jpeg_bytes );
+    close $fh;
 
-        say "Saved jpeg to $OUT_FILE";
-        $pipeline->set_state( "null" );
-        return 1;
-    };
+    say "Saved jpeg to $output_file (size: " . (-s $output_file) . ")";
+    return 1;
 }
 
 
@@ -47,8 +47,8 @@ my $capsfilter = GStreamer1::ElementFactory::make(
 my $avdec_h264 = GStreamer1::ElementFactory::make(
     avdec_h264 => 'that_i_should_bow_so_low' );
 my $jpegenc    = GStreamer1::ElementFactory::make( jpegenc => 'only_a_cat' );
-my $fakesink   = GStreamer1::ElementFactory::make(
-    fakesink => 'of_a_different_coat' );
+my $appsink    = GStreamer1::ElementFactory::make(
+    appsink => 'of_a_different_coat' );
 
 my $caps = GStreamer1::Caps::Simple->new( 'video/x-h264',
     width  => 'Glib::Int' => 800,
@@ -56,13 +56,12 @@ my $caps = GStreamer1::Caps::Simple->new( 'video/x-h264',
 );
 $capsfilter->set( caps => $caps );
 
-$fakesink->set( 'signal-handoffs' => TRUE );
-$fakesink->signal_connect(
-    'handoff' => get_dump_file_callback( $pipeline ),
-);
+$appsink->set( 'max-buffers'  => 20 );
+$appsink->set( 'emit-signals' => TRUE );
+$appsink->set( 'sync'         => FALSE );
 
 
-my @link = ( $rpi, $h264parse, $capsfilter, $avdec_h264, $jpegenc, $fakesink );
+my @link = ( $rpi, $h264parse, $capsfilter, $avdec_h264, $jpegenc, $appsink );
 $pipeline->add( $_ ) for @link;
 foreach my $i (0 .. $#link) {
     last if ! exists $link[$i+1];
@@ -72,10 +71,10 @@ foreach my $i (0 .. $#link) {
 }
 
 $pipeline->set_state( "playing" );
-
-my $bus = $pipeline->get_bus;
-my $msg = $bus->timed_pop_filtered( GStreamer1::CLOCK_TIME_NONE,
-    [ 'error', 'eos' ]);
-#warn "Message: " . $msg->error . "\n";
-
+my $jpeg_sample = $appsink->pull_sample;
 $pipeline->set_state( "null" );
+
+my $jpeg_buf = $jpeg_sample->get_buffer;
+my $size = $jpeg_buf->get_size;
+my $buf = $jpeg_buf->extract_dup( 0, $size, undef, $size );
+dump_to_file( $OUT_FILE, $buf );
