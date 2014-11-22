@@ -32,7 +32,7 @@ use Glib::Object::Introspection;
 BEGIN {
     foreach my $name ('', (
         #'Allocators',
-        #'App',
+        'App',
         #'Audio',
         'Base',
         #'Check',
