@@ -35,6 +35,45 @@ sub dump_to_file
     return 1;
 }
 
+sub get_catch_sample_callback
+{
+    my ($appsink, $pipeline) = @_;
+    return sub {
+        my $jpeg_sample = $appsink->pull_sample;
+
+warn "Got sample\n";
+        my $jpeg_buf = $jpeg_sample->get_buffer;
+        my $size = $jpeg_buf->get_size;
+        my $buf = $jpeg_buf->extract_dup( 0, $size, undef, $size );
+        dump_to_file( $OUT_FILE, $buf );
+
+        $pipeline->set_state( 'null' );
+        return 1;
+    };
+}
+
+sub get_catch_handoff_callback
+{
+    my ($pipeline, $loop) = @_;
+    return sub {
+        my ($sink, $data_buf, $pad) = @_;
+        my $size = $data_buf->get_size;
+        my $buf = $data_buf->extract_dup( 0, $size, undef, $size );
+        dump_to_file( $OUT_FILE, $buf );
+
+        $pipeline->set_state( 'null' );
+        $loop->quit;
+        return 1;
+    };
+}
+
+sub bus_watch
+{
+    my ($bus, $msg) = @_;
+    warn "Got bus message: " . $msg . "\n";
+    return 1;
+}
+
 
 GStreamer1::init([ $0, @ARGV ]);
 my $loop = Glib::MainLoop->new( undef, FALSE );
@@ -47,8 +86,8 @@ my $capsfilter = GStreamer1::ElementFactory::make(
 my $avdec_h264 = GStreamer1::ElementFactory::make(
     avdec_h264 => 'that_i_should_bow_so_low' );
 my $jpegenc    = GStreamer1::ElementFactory::make( jpegenc => 'only_a_cat' );
-my $appsink    = GStreamer1::ElementFactory::make(
-    appsink => 'of_a_different_coat' );
+my $sink  = GStreamer1::ElementFactory::make(
+    fakesink => 'of_a_different_coat' );
 
 my $caps = GStreamer1::Caps::Simple->new( 'video/x-h264',
     width  => 'Glib::Int' => 800,
@@ -56,12 +95,13 @@ my $caps = GStreamer1::Caps::Simple->new( 'video/x-h264',
 );
 $capsfilter->set( caps => $caps );
 
-$appsink->set( 'max-buffers'  => 20 );
-$appsink->set( 'emit-signals' => TRUE );
-$appsink->set( 'sync'         => FALSE );
+$sink->set( 'signal-handoffs' => TRUE );
+$sink->signal_connect(
+    $_ => get_catch_handoff_callback( $pipeline, $loop ),
+) for 'handoff', 'preroll-handoff';
 
 
-my @link = ( $rpi, $h264parse, $capsfilter, $avdec_h264, $jpegenc, $appsink );
+my @link = ( $rpi, $h264parse, $capsfilter, $avdec_h264, $jpegenc, $sink );
 $pipeline->add( $_ ) for @link;
 foreach my $i (0 .. $#link) {
     last if ! exists $link[$i+1];
@@ -70,11 +110,6 @@ foreach my $i (0 .. $#link) {
     $this->link( $next );
 }
 
+warn "Starting pipeline . . . \n";
 $pipeline->set_state( "playing" );
-my $jpeg_sample = $appsink->pull_sample;
-$pipeline->set_state( "null" );
-
-my $jpeg_buf = $jpeg_sample->get_buffer;
-my $size = $jpeg_buf->get_size;
-my $buf = $jpeg_buf->extract_dup( 0, $size, undef, $size );
-dump_to_file( $OUT_FILE, $buf );
+$loop->run;
