@@ -62,6 +62,7 @@ BEGIN {
 }
 
 use GStreamer1::Caps::Simple;
+use GStreamer1::Buffer;
 
 1;
 __END__
