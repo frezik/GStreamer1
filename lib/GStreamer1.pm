@@ -47,7 +47,7 @@ BEGIN {
         #'Rtsp',
         #'Sdp',
         #'Tag',
-        #'Video',
+        'Video',
     )) {
         my $basename = 'Gst' . $name;
         my $pkg      = $name
